@@ -1,14 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:proyecto_dam232/models/academic_models.dart';
+import 'package:proyecto_dam232/providers/academic_data_manager.dart';
 
 class AddGradeScreen extends StatefulWidget {
-  final String subjectName;
-  final Map<String, dynamic>? gradeToEdit;
+  final Subject subject;
+  final Grade? gradeToEdit;
 
   const AddGradeScreen({
-    Key? key,
-    required this.subjectName,
+    super.key,
+    required this.subject,
     this.gradeToEdit,
-  }) : super(key: key);
+  });
 
   @override
   State<AddGradeScreen> createState() => _AddGradeScreenState();
@@ -23,41 +26,67 @@ class _AddGradeScreenState extends State<AddGradeScreen> {
   @override
   void initState() {
     super.initState();
+
+    // Si estamos editando, precargar los datos
     if (widget.gradeToEdit != null) {
-      _nameController.text = widget.gradeToEdit!['name'] ?? '';
-      _percentageController.text = widget.gradeToEdit!['percentage']?.toString() ?? '0';
-      _maxScoreController.text = widget.gradeToEdit!['max_score']?.toString() ?? '10';
-      
-      final score = widget.gradeToEdit!['score'];
-      _scoreController.text = (score != null) ? score.toString() : '';
+      final g = widget.gradeToEdit!;
+      _nameController.text = g.name;
+      _percentageController.text = g.percentage.toString();
+      _maxScoreController.text = g.maxScore.toString();
+      _scoreController.text = g.score?.toString() ?? '';
+    } else {
+      _maxScoreController.text = '10';
     }
   }
 
-  void _saveGrade() {
-    // Convertir textos a números
-    final name = _nameController.text;
-    final percentage = int.tryParse(_percentageController.text) ?? 0;
+  Future<void> _saveGrade() async {
+    final name = _nameController.text.trim();
+    final percentage = double.tryParse(_percentageController.text) ?? 0;
     final maxScore = double.tryParse(_maxScoreController.text) ?? 10.0;
-    final score = double.tryParse(_scoreController.text);
+    final score = _scoreController.text.isEmpty
+        ? null
+        : double.tryParse(_scoreController.text);
 
-    // Crear objeto de datos
-    final gradeData = {
-      "name": name,
-      "percentage": percentage,
-      "max_score": maxScore,
-      "score": score,
-      "subjectId": "subj_123", // ID de la materia (se usaría en la integración real)
-    };
-
-    if (widget.gradeToEdit == null) {
-      print("AGREGAR NUEVA NOTA a ${widget.subjectName}: $gradeData");
-      // Lógica futura de Firestore: addDoc(...)
-    } else {
-      print("ACTUALIZAR NOTA ID: ${widget.gradeToEdit!['id'] ?? 'N/A'} en ${widget.subjectName}: $gradeData");
-      // Lógica futura de Firestore: updateDoc(...)
+    if (name.isEmpty || percentage <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Por favor completa el nombre y la ponderación."),
+        ),
+      );
+      return;
     }
 
-    Navigator.pop(context);
+    final dataManager = context.read<AcademicDataManager>();
+
+    final newGrade = Grade(
+      id: widget.gradeToEdit?.id ?? '',
+      subjectId: widget.subject.id,
+      name: name,
+      percentage: percentage,
+      score: score,
+      maxScore: maxScore,
+      createdAt: DateTime.now(),
+    );
+
+    try {
+      if (widget.gradeToEdit == null) {
+        await dataManager.addGrade(newGrade);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Nota agregada exitosamente.')),
+        );
+      } else {
+        await dataManager.updateGrade(newGrade);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Nota actualizada exitosamente.')),
+        );
+      }
+
+      Navigator.pop(context);
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error al guardar nota: $e')),
+      );
+    }
   }
 
   @override
@@ -100,31 +129,48 @@ class _AddGradeScreenState extends State<AddGradeScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              "Materia: ${widget.subjectName}",
+              "Materia: ${widget.subject.name}",
               style: const TextStyle(
-                fontSize: 14, 
-                fontWeight: FontWeight.w600, 
-                color: Colors.grey
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: Colors.grey,
               ),
             ),
             const Divider(height: 20),
-            
             Expanded(
               child: ListView(
                 children: [
-                  _buildInputField("NOMBRE DE LA EVALUACIÓN", "Ej. Examen Parcial", _nameController, isNumeric: false),
+                  _buildInputField(
+                    "NOMBRE DE LA EVALUACIÓN",
+                    "Ej. Examen Parcial",
+                    _nameController,
+                    isNumeric: false,
+                  ),
                   const SizedBox(height: 20),
-                  _buildInputField("PONDERACIÓN (%)", "Ej. 30 (Valor entre 0 y 100)", _percentageController, isNumeric: true),
+                  _buildInputField(
+                    "PONDERACIÓN (%)",
+                    "Ej. 30 (Valor entre 0 y 100)",
+                    _percentageController,
+                    isNumeric: true,
+                  ),
                   const SizedBox(height: 20),
-                  _buildInputField("NOTA MÁXIMA", "Ej. 10.0", _maxScoreController, isNumeric: true),
+                  _buildInputField(
+                    "NOTA MÁXIMA",
+                    "Ej. 10.0",
+                    _maxScoreController,
+                    isNumeric: true,
+                  ),
                   const SizedBox(height: 30),
-                  _buildInputField("NOTA OBTENIDA", "Ej. 8.5 (Dejar vacío si está pendiente)", _scoreController, isNumeric: true),
+                  _buildInputField(
+                    "NOTA OBTENIDA",
+                    "Ej. 8.5 (Dejar vacío si está pendiente)",
+                    _scoreController,
+                    isNumeric: true,
+                  ),
                   const SizedBox(height: 40),
                 ],
               ),
             ),
-            
-            // Botón de Guardar
             ElevatedButton(
               onPressed: _saveGrade,
               style: ElevatedButton.styleFrom(
@@ -135,7 +181,7 @@ class _AddGradeScreenState extends State<AddGradeScreen> {
                   borderRadius: BorderRadius.circular(8),
                 ),
                 textStyle: const TextStyle(
-                  fontSize: 14, 
+                  fontSize: 14,
                   fontWeight: FontWeight.bold,
                   letterSpacing: 1.0,
                 ),
@@ -148,26 +194,28 @@ class _AddGradeScreenState extends State<AddGradeScreen> {
     );
   }
 
-  // Widget auxiliar para campos de texto
-  Widget _buildInputField(String label, String hint, TextEditingController controller, {required bool isNumeric}) {
+  Widget _buildInputField(
+    String label,
+    String hint,
+    TextEditingController controller, {
+    required bool isNumeric,
+  }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           label,
           style: const TextStyle(
-            fontSize: 12, 
-            fontWeight: FontWeight.bold, 
-            color: Colors.grey
+            fontSize: 12,
+            fontWeight: FontWeight.bold,
+            color: Colors.grey,
           ),
         ),
         const SizedBox(height: 8),
         TextField(
           controller: controller,
           keyboardType: isNumeric ? TextInputType.number : TextInputType.text,
-          decoration: InputDecoration(
-            hintText: hint,
-          ),
+          decoration: InputDecoration(hintText: hint),
         ),
       ],
     );

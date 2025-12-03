@@ -14,7 +14,6 @@ class Subject {
     required this.colorHex,
   });
 
-  // Constructor para crear un objeto Subject desde un documento de Firestore
   factory Subject.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>;
     return Subject(
@@ -25,7 +24,6 @@ class Subject {
     );
   }
 
-  // Método para convertir el objeto a Map (para guardar en Firestore)
   Map<String, dynamic> toFirestore() {
     return {
       'name': name,
@@ -56,7 +54,6 @@ class Event {
     this.isCompleted = false,
   });
 
-  // Constructor para crear un objeto AcademicEvent desde un documento de Firestore
   factory Event.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>;
     return Event(
@@ -70,7 +67,6 @@ class Event {
     );
   }
 
-  // Método para convertir el objeto a Map (para guardar en Firestore)
   Map<String, dynamic> toFirestore() {
     return {
       'title': title,
@@ -102,7 +98,6 @@ class Schedule {
     required this.classroom,
   });
 
-  // Constructor para crear un objeto Schedule desde un documento de Firestore
   factory Schedule.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>;
     return Schedule(
@@ -115,7 +110,6 @@ class Schedule {
     );
   }
 
-  // Método para convertir el objeto a Map (para guardar en Firestore)
   Map<String, dynamic> toFirestore() {
     return {
       'subjectId': subjectId,
@@ -144,4 +138,49 @@ class ScheduleItem {
     required this.startTime,
     required this.endTime,
   });
+}
+
+
+class Grade {
+  final String id;
+  final String subjectId; // Relación con la materia
+  final String name;
+  final double percentage;
+  final double? score; // Puede ser null si aún no se ha calificado
+  final double maxScore;
+  final DateTime createdAt;
+
+  Grade({
+    required this.id,
+    required this.subjectId,
+    required this.name,
+    required this.percentage,
+    this.score,
+    required this.maxScore,
+    required this.createdAt,
+  });
+
+  factory Grade.fromFirestore(DocumentSnapshot doc) {
+    final data = doc.data() as Map<String, dynamic>;
+    return Grade(
+      id: doc.id,
+      subjectId: data['subjectId'] ?? '',
+      name: data['name'] ?? '',
+      percentage: (data['percentage'] ?? 0).toDouble(),
+      score: data['score'] != null ? (data['score'] as num).toDouble() : null,
+      maxScore: (data['maxScore'] ?? 10).toDouble(),
+      createdAt: (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+    );
+  }
+
+  Map<String, dynamic> toFirestore() {
+    return {
+      'subjectId': subjectId,
+      'name': name,
+      'percentage': percentage,
+      'score': score,
+      'maxScore': maxScore,
+      'createdAt': FieldValue.serverTimestamp(),
+    };
+  }
 }

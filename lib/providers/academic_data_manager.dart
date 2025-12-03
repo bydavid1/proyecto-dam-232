@@ -13,16 +13,19 @@ class AcademicDataManager extends ChangeNotifier {
   List<Subject> _subjects = [];
   List<Event> _events = [];
   List<ScheduleItem> _scheduleItems = [];
+  List<Grade> _grades = [];
 
   // Getters públicos
   List<Subject> get subjects => _subjects;
   List<Event> get events => _events;
   List<ScheduleItem> get schedule => _scheduleItems;
+  List<Grade> get grades => _grades;
 
   // Streams para escuchar cambios en tiempo real
   StreamSubscription<QuerySnapshot>? _subjectsSub;
   StreamSubscription<QuerySnapshot>? _eventsSub;
   StreamSubscription<QuerySnapshot>? _scheduleSub;
+  StreamSubscription<QuerySnapshot>? _gradesSubscription;
 
   AcademicDataManager() {
     // Cuando el usuario cambia, volvemos a suscribimos a sus datos
@@ -57,7 +60,9 @@ class AcademicDataManager extends ChangeNotifier {
   void _startListeners(String uid) {
     // Materias
     _subjectsSub = _collection('subjects').snapshots().listen((snapshot) {
-      _subjects = snapshot.docs.map((doc) => Subject.fromFirestore(doc)).toList();
+      _subjects = snapshot.docs
+          .map((doc) => Subject.fromFirestore(doc))
+          .toList();
       notifyListeners();
     }, onError: (e) => print("Error en materias: $e"));
 
@@ -83,15 +88,23 @@ class AcademicDataManager extends ChangeNotifier {
       }).toList();
       notifyListeners();
     }, onError: (e) => print("Error en horario: $e"));
+
+    // Calificaciones
+    _gradesSubscription = _collection('grades').snapshots().listen((snapshot) {
+      _grades = snapshot.docs.map((doc) => Grade.fromFirestore(doc)).toList();
+      notifyListeners();
+    }, onError: (e) => print("Error en calificaciones: $e"));
   }
 
   void _stopListeners() {
     _subjectsSub?.cancel();
     _eventsSub?.cancel();
     _scheduleSub?.cancel();
+    _gradesSubscription?.cancel();
     _subjects = [];
     _events = [];
     _scheduleItems = [];
+    _grades = [];
     notifyListeners();
     print("🛑 Listeners detenidos y datos vaciados.");
   }
@@ -116,7 +129,9 @@ class AcademicDataManager extends ChangeNotifier {
 
   Future<void> updateSubject(Subject subject) async {
     try {
-      await _collection('subjects').doc(subject.id).update(subject.toFirestore());
+      await _collection(
+        'subjects',
+      ).doc(subject.id).update(subject.toFirestore());
       print("Materia '${subject.name}' actualizada.");
     } catch (e) {
       print("Error al actualizar materia: $e");
@@ -129,12 +144,16 @@ class AcademicDataManager extends ChangeNotifier {
       print("Materia eliminada: $id");
 
       // Eliminar eventos y horarios relacionados
-      final events = await _collection('events').where('subjectId', isEqualTo: id).get();
+      final events = await _collection(
+        'events',
+      ).where('subjectId', isEqualTo: id).get();
       for (var e in events.docs) {
         await e.reference.delete();
       }
 
-      final schedules = await _collection('schedule').where('subjectId', isEqualTo: id).get();
+      final schedules = await _collection(
+        'schedule',
+      ).where('subjectId', isEqualTo: id).get();
       for (var s in schedules.docs) {
         await s.reference.delete();
       }
@@ -210,7 +229,9 @@ class AcademicDataManager extends ChangeNotifier {
 
   Future<void> updateSchedule(Schedule schedule) async {
     try {
-      await _collection('schedule').doc(schedule.id).update(schedule.toFirestore());
+      await _collection(
+        'schedule',
+      ).doc(schedule.id).update(schedule.toFirestore());
       print("Horario actualizado: ${schedule.id}");
     } catch (e) {
       print("Error al actualizar horario: $e");
@@ -236,6 +257,38 @@ class AcademicDataManager extends ChangeNotifier {
     return null;
   }
 
+
+  Future<void> addGrade(Grade grade) async {
+    try {
+      await _collection('grades').add(grade.toFirestore());
+      print("Calificación '${grade.name}' agregada.");
+    } catch (e) {
+      print("Error al agregar calificación: $e");
+    }
+  }
+
+  Future<void> updateGrade(Grade grade) async {
+    try {
+      await _collection('grades').doc(grade.id).update(grade.toFirestore());
+      print("Calificación '${grade.name}' actualizada.");
+    } catch (e) {
+      print("Error al actualizar calificación: $e");
+    }
+  }
+
+  Future<void> deleteGrade(String gradeId) async {
+    try {
+      await _collection('grades').doc(gradeId).delete();
+      print("Calificación eliminada: $gradeId");
+    } catch (e) {
+      print("Error al eliminar calificación: $e");
+    }
+  }
+
+  List<Grade> getGradesBySubject(String subjectId) {
+    return _grades.where((g) => g.subjectId == subjectId).toList();
+  }
+
   // -------------------------------------------------------------
   // 🔹 Utilidades
   // -------------------------------------------------------------
@@ -243,8 +296,8 @@ class AcademicDataManager extends ChangeNotifier {
     final now = DateTime.now();
     return _events.where((e) {
       return e.dueDate.year == now.year &&
-             e.dueDate.month == now.month &&
-             e.dueDate.day == now.day;
+          e.dueDate.month == now.month &&
+          e.dueDate.day == now.day;
     }).toList();
   }
 

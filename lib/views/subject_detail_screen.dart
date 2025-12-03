@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:proyecto_dam232/providers/academic_data_manager.dart';
 import '../models/academic_models.dart';
 import 'add_subject_screen.dart';
+import 'grades_screen.dart'; // <-- added import
 
 class SubjectDetailScreen extends StatelessWidget {
   final Subject subject;
@@ -117,7 +118,35 @@ class SubjectDetailScreen extends StatelessWidget {
                 ),
               ),
             ),
-            const SizedBox(height: 40),
+            const SizedBox(height: 24),
+
+            // NEW: Button to navigate to GradesScreen
+            ElevatedButton.icon(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => GradesScreen(subject: subject),
+                  ),
+                );
+              },
+              icon: const Icon(Icons.school_outlined),
+              label: const Text("VER NOTAS"),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF0B1E3B),
+                foregroundColor: Colors.white,
+                minimumSize: const Size(double.infinity, 50),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                textStyle: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 0.5,
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 16),
 
             // 4. Botón eliminar materia
             ElevatedButton.icon(
