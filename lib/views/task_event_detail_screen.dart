@@ -1,16 +1,23 @@
 import 'package:flutter/material.dart';
+import 'package:proyecto_dam232/models/academic_models.dart';
+import 'package:proyecto_dam232/utils/color.dart';
 import 'add_task_event_screen.dart'; // Para editar el evento
 
 class TaskEventDetailScreen extends StatelessWidget {
-  final Map<String, dynamic> event;
+  final Event event;
+  final Subject? subject;
 
-  const TaskEventDetailScreen({Key? key, required this.event}) : super(key: key);
+  const TaskEventDetailScreen({
+    super.key, 
+    required this.event,
+    required this.subject,
+  });
 
   // Simulación de una función para manejar el estado
   void _toggleCompletion(BuildContext context) {
     // Lógica futura para actualizar Firestore
-    final newState = !event['isCompleted'];
-    print("Toggle Completion para Evento ID ${event['id']}: Nuevo estado $newState");
+    final newState = !event.isCompleted;
+    print("Toggle Completion para Evento ID ${event.id}: Nuevo estado $newState");
     
     // Simular el cierre o actualización de la pantalla
     Navigator.pop(context);
@@ -32,8 +39,8 @@ class TaskEventDetailScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final Color color = event['color'];
-    final bool isCompleted = event['isCompleted'];
+    final Color color = subject != null ? hexToColor(subject!.colorHex) : Colors.grey;
+    final bool isCompleted = event.isCompleted;
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -45,7 +52,7 @@ class TaskEventDetailScreen extends StatelessWidget {
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          event['type'],
+          event.type,
           style: const TextStyle(
             color: Color(0xFF0B1E3B),
             fontSize: 16,
@@ -87,11 +94,11 @@ class TaskEventDetailScreen extends StatelessWidget {
                   // TÍTULO DEL EVENTO
                   Row(
                     children: [
-                      Icon(_getIconForType(event['type']), color: color, size: 24),
+                      Icon(_getIconForType(event.type), color: color, size: 24),
                       const SizedBox(width: 10),
                       Expanded(
                         child: Text(
-                          event['name'],
+                          event.title,
                           style: TextStyle(
                             color: const Color(0xFF0B1E3B),
                             fontSize: 24,
@@ -108,19 +115,14 @@ class TaskEventDetailScreen extends StatelessWidget {
                   // DETALLES DE FECHA Y HORA
                   _buildDetailRow(
                     label: "Materia", 
-                    value: event['subject'], 
+                    value: subject?.name ?? "Materia no asignada", 
                     icon: Icons.school_outlined, 
                     valueColor: color
                   ),
                   _buildDetailRow(
-                    label: "Fecha", 
-                    value: event['date'], 
+                    label: "Fecha Y Hora", 
+                    value: event.dueDate.toString(), 
                     icon: Icons.calendar_today_outlined
-                  ),
-                  _buildDetailRow(
-                    label: "Hora", 
-                    value: event['time'], 
-                    icon: Icons.access_time
                   ),
                   
                   const SizedBox(height: 30),
@@ -143,7 +145,7 @@ class TaskEventDetailScreen extends StatelessWidget {
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Text(
-                      event['notes'] ?? "No hay notas adicionales para este evento.",
+                      event.description,
                       style: const TextStyle(
                         color: Colors.grey, 
                         height: 1.5, 

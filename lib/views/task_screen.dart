@@ -1,69 +1,29 @@
 import 'package:flutter/material.dart';
-import 'add_task_event_screen.dart'; // Para agregar nuevos eventos
-import 'task_event_detail_screen.dart'; // Para ver detalles
+import 'package:provider/provider.dart';
+import 'package:proyecto_dam232/providers/academic_data_manager.dart';
+import '../models/academic_models.dart';
+import 'add_task_event_screen.dart';
+import 'task_event_detail_screen.dart';
 
 class TasksScreen extends StatelessWidget {
-  const TasksScreen({Key? key}) : super(key: key);
+  const TasksScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    // --- SIMULACIÓN DE DATOS DE TAREAS Y EVENTOS ---
-    // Usamos el mismo formato para simplificar la lista
-    final List<Map<String, dynamic>> tasksAndEvents = [
-      {
-        "id": "t_001",
-        "type": "TUTORIA",
-        "name": "Tutoría de Redes",
-        "date": "2024-12-05", // Próxima semana
-        "time": "14:00",
-        "subject": "Redes",
-        "color": Colors.orange,
-        "isCompleted": false,
-      },
-      {
-        "id": "t_002",
-        "type": "ENTREGA",
-        "name": "Entrega de Laboratorio 3",
-        "date": "2024-12-08", // Próxima semana
-        "time": "23:59",
-        "subject": "Desarrollo de Aplicaciones Móviles",
-        "color": Colors.redAccent,
-        "isCompleted": false,
-      },
-      {
-        "id": "t_003",
-        "type": "EXAMEN",
-        "name": "Examen Final",
-        "date": "2024-12-15", // En dos semanas
-        "time": "09:00",
-        "subject": "Testing y Calidad de Software",
-        "color": Colors.green,
-        "isCompleted": false,
-      },
-      {
-        "id": "t_004",
-        "type": "ENTREGA",
-        "name": "Avance de Tesis",
-        "date": "2024-11-20", // Tarea pasada (completada)
-        "time": "18:00",
-        "subject": "Seminario de Investigación",
-        "color": Colors.blueAccent,
-        "isCompleted": true,
-      },
-    ];
+    final dataManager = Provider.of<AcademicDataManager>(context);
+    final List<Event> events = dataManager.events;
+    final List<Subject> subjects = dataManager.subjects;
 
-    // Ordenar por fecha y luego por estado (incompletas primero)
-    tasksAndEvents.sort((a, b) {
-      if (a['isCompleted'] != b['isCompleted']) {
-        return a['isCompleted'] ? 1 : -1; // Incompletas van antes (false: -1)
+    // Ordenar por estado y fecha
+    events.sort((a, b) {
+      if (a.isCompleted != b.isCompleted) {
+        return a.isCompleted ? 1 : -1;
       }
-      return a['date'].compareTo(b['date']); // Ordenar por fecha
+      return a.dueDate.compareTo(b.dueDate);
     });
 
-    // Separar por estado
-    final List<Map<String, dynamic>> pendingTasks = tasksAndEvents.where((t) => !t['isCompleted']).toList();
-    final List<Map<String, dynamic>> completedTasks = tasksAndEvents.where((t) => t['isCompleted']).toList();
-
+    final pending = events.where((e) => !e.isCompleted).toList();
+    final completed = events.where((e) => e.isCompleted).toList();
 
     return Scaffold(
       backgroundColor: const Color(0xFFF9FAFB),
@@ -86,31 +46,36 @@ class TasksScreen extends StatelessWidget {
           ListView(
             padding: const EdgeInsets.only(top: 20, bottom: 80, left: 20, right: 20),
             children: [
-              // 1. TAREAS PENDIENTES
               const Text(
                 "TAREAS PENDIENTES",
-                style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold, fontSize: 12, letterSpacing: 1.2),
+                style: TextStyle(
+                    color: Colors.grey,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 12,
+                    letterSpacing: 1.2),
               ),
               const SizedBox(height: 10),
-              if (pendingTasks.isEmpty)
+              if (pending.isEmpty)
                 _buildEmptyState("¡Todo al día! No hay pendientes próximos."),
-              ...pendingTasks.map((task) => _buildTaskItem(context, task)).toList(),
+              ...pending.map((e) => _buildTaskItem(context, e, subjects)).toList(),
 
               const SizedBox(height: 30),
 
-              // 2. TAREAS COMPLETADAS
-              if (completedTasks.isNotEmpty) ...[
+              if (completed.isNotEmpty) ...[
                 const Text(
                   "COMPLETADAS",
-                  style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold, fontSize: 12, letterSpacing: 1.2),
+                  style: TextStyle(
+                      color: Colors.grey,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 12,
+                      letterSpacing: 1.2),
                 ),
                 const SizedBox(height: 10),
-                ...completedTasks.map((task) => _buildTaskItem(context, task)).toList(),
+                ...completed.map((e) => _buildTaskItem(context, e, subjects)).toList(),
               ]
             ],
           ),
 
-          // 3. BOTÓN FLOTANTE "AGREGAR"
           Positioned(
             bottom: 20,
             left: 20,
@@ -119,7 +84,9 @@ class TasksScreen extends StatelessWidget {
               onPressed: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => const AddTaskEventScreen()),
+                  MaterialPageRoute(
+                    builder: (context) => const AddTaskEventScreen(),
+                  ),
                 );
               },
               icon: const Icon(Icons.add, size: 20),
@@ -132,7 +99,7 @@ class TasksScreen extends StatelessWidget {
                   borderRadius: BorderRadius.circular(8),
                 ),
                 textStyle: const TextStyle(
-                  fontSize: 14, 
+                  fontSize: 14,
                   fontWeight: FontWeight.bold,
                   letterSpacing: 1.0,
                 ),
@@ -161,34 +128,45 @@ class TasksScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildTaskItem(BuildContext context, Map<String, dynamic> task) {
-    final Color color = task['color'];
-    final bool isCompleted = task['isCompleted'];
+  Widget _buildTaskItem(BuildContext context, Event event, List<Subject> subjects) {
+    final dataManager = Provider.of<AcademicDataManager>(context, listen: false);
+    final subject = subjects.firstWhere(
+      (s) => s.id == event.subjectId,
+      orElse: () => Subject(
+        id: '',
+        name: 'Materia no asignada',
+        professor: '',
+        colorHex: '#B0BEC5',
+      ),
+    );
 
-    // Convertir fecha de YYYY-MM-DD a un formato amigable (ej. 5 de Diciembre)
-    final dateParts = task['date'].toString().split('-');
+    final color = Color(
+      int.parse(subject.colorHex.replaceFirst('#', '0xff')),
+    );
+
+    final day = event.dueDate.day;
     final monthNames = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
-    final monthIndex = int.parse(dateParts[1]) - 1;
-    final day = dateParts[2];
-    final dateText = "$day ${monthNames[monthIndex]}";
+    final dateText = "$day ${monthNames[event.dueDate.month - 1]}";
+    final timeText =
+        "${event.dueDate.hour.toString().padLeft(2, '0')}:${event.dueDate.minute.toString().padLeft(2, '0')}";
 
     return InkWell(
       onTap: () {
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (context) => TaskEventDetailScreen(event: task)),
+          MaterialPageRoute(builder: (context) => TaskEventDetailScreen(event: event, subject: subject)),
         );
       },
       child: Container(
         margin: const EdgeInsets.only(bottom: 12),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: isCompleted ? const Color(0xFFE8F5E9) : Colors.white, // Fondo más claro si está completado
+          color: event.isCompleted ? const Color(0xFFE8F5E9) : Colors.white,
           borderRadius: BorderRadius.circular(12),
-          border: Border(left: BorderSide(color: isCompleted ? Colors.grey : color, width: 4)),
+          border: Border(left: BorderSide(color: event.isCompleted ? Colors.grey : color, width: 4)),
           boxShadow: [
             BoxShadow(
-              color: color.withOpacity(isCompleted ? 0.0 : 0.05),
+              color: color.withOpacity(event.isCompleted ? 0.0 : 0.05),
               blurRadius: 5,
               offset: const Offset(0, 2),
             ),
@@ -196,7 +174,6 @@ class TasksScreen extends StatelessWidget {
         ),
         child: Row(
           children: [
-            // Icono y Fecha/Hora
             Column(
               children: [
                 Container(
@@ -207,63 +184,49 @@ class TasksScreen extends StatelessWidget {
                   ),
                   child: Text(
                     dateText,
-                    style: TextStyle(
-                      color: color,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 10,
-                    ),
+                    style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 10),
                   ),
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  task['time'],
-                  style: const TextStyle(
-                    color: Colors.grey,
-                    fontSize: 10,
-                  ),
+                  timeText,
+                  style: const TextStyle(color: Colors.grey, fontSize: 10),
                 ),
               ],
             ),
             const SizedBox(width: 15),
-            
-            // Título y Materia
+
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    task['name'],
+                    event.title,
                     style: TextStyle(
                       fontWeight: FontWeight.w600,
                       fontSize: 15,
-                      color: isCompleted ? Colors.grey : const Color(0xFF0B1E3B),
-                      decoration: isCompleted ? TextDecoration.lineThrough : TextDecoration.none,
+                      color: event.isCompleted ? Colors.grey : const Color(0xFF0B1E3B),
+                      decoration:
+                          event.isCompleted ? TextDecoration.lineThrough : TextDecoration.none,
                     ),
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    task['subject'],
-                    style: TextStyle(
-                      color: color,
-                      fontSize: 12,
-                    ),
+                    subject.name,
+                    style: TextStyle(color: color, fontSize: 12),
                   ),
                 ],
               ),
             ),
 
-            // Tipo de Evento / Checkbox
             Column(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: color,
-                    borderRadius: BorderRadius.circular(4),
-                  ),
+                  decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(4)),
                   child: Text(
-                    task['type'],
+                    event.type.toUpperCase(),
                     style: const TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
@@ -271,11 +234,16 @@ class TasksScreen extends StatelessWidget {
                     ),
                   ),
                 ),
-                if (isCompleted)
-                  const Padding(
-                    padding: EdgeInsets.only(top: 8.0),
-                    child: Icon(Icons.check_circle, color: Colors.green, size: 20),
-                  )
+                IconButton(
+                  icon: Icon(
+                    event.isCompleted ? Icons.check_circle : Icons.radio_button_unchecked,
+                    color: event.isCompleted ? Colors.green : Colors.grey,
+                    size: 20,
+                  ),
+                  onPressed: () async {
+                    await dataManager.updateEventCompletion(event.id, !event.isCompleted);
+                  },
+                ),
               ],
             ),
           ],

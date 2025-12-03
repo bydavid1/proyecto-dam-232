@@ -1,33 +1,34 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:proyecto_dam232/models/academic_models.dart';
+import 'package:proyecto_dam232/providers/academic_data_manager.dart';
 
 class SetupScheduleScreen extends StatefulWidget {
-  const SetupScheduleScreen({Key? key}) : super(key: key);
+  const SetupScheduleScreen({super.key});
 
   @override
   State<SetupScheduleScreen> createState() => _SetupScheduleScreenState();
 }
 
 class _SetupScheduleScreenState extends State<SetupScheduleScreen> {
-  // 1. Controladores y variables de estado
-  final TextEditingController _subjectController = TextEditingController();
+  Subject? _selectedSubject;
   final TextEditingController _professorController = TextEditingController();
   String? _selectedDay;
   TimeOfDay _startTime = TimeOfDay.now();
   TimeOfDay _endTime = TimeOfDay.now();
 
-  // Opciones mockeadas para el selector de día
   final List<String> _daysOfWeek = [
-    'Lunes', 
-    'Martes', 
-    'Miércoles', 
-    'Jueves', 
-    'Viernes', 
+    'Lunes',
+    'Martes',
+    'Miércoles',
+    'Jueves',
+    'Viernes',
     'Sábado'
   ];
 
-  // 2. Funciones para seleccionar hora
+  // Seleccionar hora
   Future<void> _selectTime(BuildContext context, bool isStart) async {
-    final TimeOfDay? picked = await showTimePicker(
+    final picked = await showTimePicker(
       context: context,
       initialTime: isStart ? _startTime : _endTime,
     );
@@ -42,34 +43,40 @@ class _SetupScheduleScreenState extends State<SetupScheduleScreen> {
     }
   }
 
-  // 3. Función para guardar la clase
-  void _saveClass() {
-    if (_subjectController.text.isEmpty || _selectedDay == null) {
-      // Usar un SnackBar en lugar de alert()
+  // Guardar clase
+  Future<void> _saveClass() async {
+    if (_selectedSubject == null || _selectedDay == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Por favor, complete al menos la Materia y el Día.')),
+        const SnackBar(content: Text('Seleccione una materia y un día.')),
       );
       return;
     }
 
-    // Aquí iría la lógica de guardar en la base de datos (Firestore o similar)
-    print('--- Nueva Clase Registrada ---');
-    print('Materia: ${_subjectController.text}');
-    print('Profesor: ${_professorController.text}');
-    print('Día: $_selectedDay');
-    print('Hora Inicio: ${_startTime.format(context)}');
-    print('Hora Fin: ${_endTime.format(context)}');
-    print('------------------------------');
+    final dataManager = context.read<AcademicDataManager>();
 
-    // Muestra una confirmación y regresa a la pantalla anterior
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Clase guardada exitosamente!')),
+    final scheduleItem = ScheduleItem(
+      id: UniqueKey().toString(),
+      subjectName: _selectedSubject!.name,
+      professorName:
+          _professorController.text.isEmpty ? _selectedSubject!.professor : _professorController.text,
+      dayOfWeek: _selectedDay!,
+      startTime: _startTime.format(context),
+      endTime: _endTime.format(context),
     );
+
+    await dataManager.addScheduleItem(scheduleItem);
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Clase agregada exitosamente!')),
+    );
+
     Navigator.pop(context);
   }
 
   @override
   Widget build(BuildContext context) {
+    final subjects = context.watch<AcademicDataManager>().subjects;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text(
@@ -77,29 +84,52 @@ class _SetupScheduleScreenState extends State<SetupScheduleScreen> {
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
         backgroundColor: Theme.of(context).primaryColor,
-        iconTheme: const IconThemeData(color: Colors.white), // Color del ícono de regreso
+        iconTheme: const IconThemeData(color: Colors.white),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Campo de Materia
+            // Selector de Materia
             const Text(
               "MATERIA",
               style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey),
             ),
             const SizedBox(height: 8),
-            TextField(
-              controller: _subjectController,
-              decoration: const InputDecoration(
-                hintText: "Nombre de la materia (Ej: Cálculo I)",
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF3F4F6),
+                borderRadius: BorderRadius.circular(8.0),
+              ),
+              child: DropdownButtonFormField<Subject>(
+                decoration: const InputDecoration(
+                  border: InputBorder.none,
+                  contentPadding: EdgeInsets.zero,
+                  isDense: true,
+                ),
+                value: _selectedSubject,
+                hint: const Text('Seleccione una materia'),
+                isExpanded: true,
+                items: subjects.map((subject) {
+                  return DropdownMenuItem(
+                    value: subject,
+                    child: Text(subject.name),
+                  );
+                }).toList(),
+                onChanged: (Subject? newSubject) {
+                  setState(() {
+                    _selectedSubject = newSubject;
+                    _professorController.text = newSubject?.professor ?? '';
+                  });
+                },
               ),
             ),
-            
+
             const SizedBox(height: 20),
 
-            // Campo de Profesor
+            // Campo de Profesor (opcional)
             const Text(
               "PROFESOR (Opcional)",
               style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey),
@@ -111,7 +141,7 @@ class _SetupScheduleScreenState extends State<SetupScheduleScreen> {
                 hintText: "Nombre del profesor",
               ),
             ),
-            
+
             const SizedBox(height: 20),
 
             // Selector de Día
@@ -154,25 +184,26 @@ class _SetupScheduleScreenState extends State<SetupScheduleScreen> {
             // Selectores de Hora
             Row(
               children: [
-                // Hora de Inicio
-                Expanded(child: _buildTimeSelector(
-                  title: "HORA INICIO", 
-                  time: _startTime, 
-                  onTap: () => _selectTime(context, true)
-                )),
+                Expanded(
+                  child: _buildTimeSelector(
+                    title: "HORA INICIO",
+                    time: _startTime,
+                    onTap: () => _selectTime(context, true),
+                  ),
+                ),
                 const SizedBox(width: 20),
-                // Hora de Fin
-                Expanded(child: _buildTimeSelector(
-                  title: "HORA FIN", 
-                  time: _endTime, 
-                  onTap: () => _selectTime(context, false)
-                )),
+                Expanded(
+                  child: _buildTimeSelector(
+                    title: "HORA FIN",
+                    time: _endTime,
+                    onTap: () => _selectTime(context, false),
+                  ),
+                ),
               ],
             ),
-            
+
             const SizedBox(height: 50),
 
-            // Botón de Guardar
             ElevatedButton(
               onPressed: _saveClass,
               child: const Text("GUARDAR CLASE"),
@@ -183,11 +214,10 @@ class _SetupScheduleScreenState extends State<SetupScheduleScreen> {
     );
   }
 
-  // Widget auxiliar para el selector de hora
   Widget _buildTimeSelector({
-    required String title, 
-    required TimeOfDay time, 
-    required VoidCallback onTap
+    required String title,
+    required TimeOfDay time,
+    required VoidCallback onTap,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -210,10 +240,7 @@ class _SetupScheduleScreenState extends State<SetupScheduleScreen> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  time.format(context),
-                  style: const TextStyle(fontSize: 16, color: Colors.black),
-                ),
+                Text(time.format(context), style: const TextStyle(fontSize: 16, color: Colors.black)),
                 const Icon(Icons.access_time, color: Colors.grey),
               ],
             ),

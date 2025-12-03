@@ -1,67 +1,32 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:proyecto_dam232/models/academic_models.dart';
+import 'package:proyecto_dam232/providers/academic_data_manager.dart';
 import 'package:proyecto_dam232/views/setup_schedule_screen.dart';
 
 class ScheduleScreen extends StatelessWidget {
-  const ScheduleScreen({Key? key}) : super(key: key);
+  const ScheduleScreen({super.key});
+
   @override
   Widget build(BuildContext context) {
-    final List<Map<String, dynamic>> scheduleData = [
-      {
-        "day": "LUNES",
-        "time": "10:00 - 12:00",
-        "subject": "Desarrollo de Aplicaciones Móviles",
-        "color": Colors.redAccent,
-      },
-      {
-        "day": "LUNES",
-        "time": "13:00 - 15:00",
-        "subject": "Testing y Calidad de Software",
-        "color": Colors.green,
-      },
-      {
-        "day": "MARTES",
-        "time": "08:00 - 10:00",
-        "subject": "Redes",
-        "color": Colors.orange,
-      },
-      {
-        "day": "MIERCOLES",
-        "time": "10:00 - 12:00",
-        "subject": "Desarrollo de Aplicaciones Móviles",
-        "color": Colors.redAccent,
-      },
-      {
-        "day": "JUEVES",
-        "time": "13:00 - 15:00",
-        "subject": "Testing y Calidad de Software",
-        "color": Colors.green,
-      },
-      {
-        "day": "VIERNES",
-        "time": "08:00 - 10:00",
-        "subject": "Redes",
-        "color": Colors.orange,
-      },
-    ];
+    final dataManager = context.watch<AcademicDataManager>();
+    final scheduleList = dataManager.schedule;
 
-    // Agrupamos los datos por día
-    final Map<String, List<Map<String, dynamic>>> groupedSchedule = {};
-    for (var item in scheduleData) {
-      if (!groupedSchedule.containsKey(item["day"])) {
-        groupedSchedule[item["day"]] = [];
-      }
-      groupedSchedule[item["day"]]!.add(item);
+    // Agrupar por día de la semana
+    final Map<String, List<ScheduleItem>> groupedSchedule = {};
+    for (var item in scheduleList) {
+      groupedSchedule.putIfAbsent(item.dayOfWeek, () => []);
+      groupedSchedule[item.dayOfWeek]!.add(item);
     }
 
-    // Lista ordenada de días
     final List<String> weekDays = [
-      "LUNES",
-      "MARTES",
-      "MIERCOLES",
-      "JUEVES",
-      "VIERNES",
-      "SABADO",
-      "DOMINGO",
+      "Lunes",
+      "Martes",
+      "Miércoles",
+      "Jueves",
+      "Viernes",
+      "Sábado",
+      "Domingo",
     ];
 
     return Scaffold(
@@ -88,41 +53,33 @@ class ScheduleScreen extends StatelessWidget {
         }).toList(),
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () => _navigateToCreationForm(context),
+        onPressed: () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const SetupScheduleScreen()),
+        ),
         backgroundColor: Theme.of(context).primaryColor,
         foregroundColor: Colors.white,
         shape: const CircleBorder(),
-        child: const Icon(Icons.settings),
         tooltip: 'Agregar nueva clase',
+        child: const Icon(Icons.add),
       ),
-    );
-  }
-
-  void _navigateToCreationForm(BuildContext context) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => const SetupScheduleScreen(),
-      ), // Navega al formulario
     );
   }
 
   Widget _buildDaySection(
     BuildContext context,
     String day,
-    List<Map<String, dynamic>> classes,
+    List<ScheduleItem> classes,
   ) {
-    // Si no hay clases, mostramos un indicador de día libre
-    bool isFreeDay = classes.isEmpty;
+    final bool isFreeDay = classes.isEmpty;
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Título del Día
           Text(
-            day,
+            day.toUpperCase(),
             style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w900,
@@ -132,12 +89,11 @@ class ScheduleScreen extends StatelessWidget {
           ),
           const Divider(height: 10, color: Colors.grey),
 
-          // Contenido del Día
           if (isFreeDay)
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 10.0),
               child: Text(
-                "¡Día Libre! 🎉",
+                "¡Día libre! 🎉",
                 style: TextStyle(
                   color: Colors.grey[400],
                   fontStyle: FontStyle.italic,
@@ -152,10 +108,8 @@ class ScheduleScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildClassItem(BuildContext context, Map<String, dynamic> classData) {
-    Color color = classData['color'] is Color
-        ? classData['color']
-        : Colors.blueAccent;
+  Widget _buildClassItem(BuildContext context, ScheduleItem classData) {
+    final color = Theme.of(context).primaryColor;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -163,11 +117,11 @@ class ScheduleScreen extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(10),
-        border: Border(left: BorderSide(color: color, width: 6)),
+        border: Border(left: BorderSide(color: color, width: 5)),
         boxShadow: [
           BoxShadow(
-            color: color.withOpacity(0.05),
-            blurRadius: 5,
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 4,
             offset: const Offset(0, 2),
           ),
         ],
@@ -175,12 +129,12 @@ class ScheduleScreen extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Columna de tiempo
+          // Columna de horas
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                classData['time'].toString().split(' - ')[0],
+                classData.startTime,
                 style: const TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: 14,
@@ -188,26 +142,27 @@ class ScheduleScreen extends StatelessWidget {
                 ),
               ),
               Text(
-                classData['time'].toString().split(' - ')[1],
+                classData.endTime,
                 style: const TextStyle(fontSize: 12, color: Colors.grey),
               ),
             ],
           ),
           const SizedBox(width: 15),
-          // Separador visual
+
           Container(
             height: 40,
             width: 1,
             color: Colors.grey[300],
             margin: const EdgeInsets.only(right: 15),
           ),
-          // Columna de información de la materia
+
+          // Columna de información de la clase
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  classData['subject'],
+                  classData.subjectName,
                   style: const TextStyle(
                     fontWeight: FontWeight.w600,
                     fontSize: 14,
@@ -216,12 +171,13 @@ class ScheduleScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  "Salón: A101 (Simulado)",
+                  classData.professorName,
                   style: TextStyle(color: color, fontSize: 12),
                 ),
               ],
             ),
           ),
+
           const Icon(Icons.chevron_right, color: Colors.grey, size: 20),
         ],
       ),
