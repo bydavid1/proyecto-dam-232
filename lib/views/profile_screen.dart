@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:proyecto_dam232/views/schedule_screen.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({Key? key}) : super(key: key);
@@ -85,7 +86,7 @@ class ProfileScreen extends StatelessWidget {
               subtitle: "Ver calendario de clases",
               color: Colors.green,
               onTap: () {
-                // Navegar a la vista de horario
+                Navigator.push(context, MaterialPageRoute(builder: (context) => const ScheduleScreen()));
               },
             ),
 

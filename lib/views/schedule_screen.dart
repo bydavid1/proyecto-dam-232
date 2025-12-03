@@ -1,16 +1,47 @@
 import 'package:flutter/material.dart';
+import 'package:proyecto_dam232/views/setup_schedule_screen.dart';
 
 class ScheduleScreen extends StatelessWidget {
   const ScheduleScreen({Key? key}) : super(key: key);
   @override
   Widget build(BuildContext context) {
     final List<Map<String, dynamic>> scheduleData = [
-      {"day": "LUNES", "time": "10:00 - 12:00", "subject": "Desarrollo de Aplicaciones Móviles", "color": Colors.redAccent},
-      {"day": "LUNES", "time": "13:00 - 15:00", "subject": "Testing y Calidad de Software", "color": Colors.green},
-      {"day": "MARTES", "time": "08:00 - 10:00", "subject": "Redes", "color": Colors.orange},
-      {"day": "MIERCOLES", "time": "10:00 - 12:00", "subject": "Desarrollo de Aplicaciones Móviles", "color": Colors.redAccent},
-      {"day": "JUEVES", "time": "13:00 - 15:00", "subject": "Testing y Calidad de Software", "color": Colors.green},
-      {"day": "VIERNES", "time": "08:00 - 10:00", "subject": "Redes", "color": Colors.orange},
+      {
+        "day": "LUNES",
+        "time": "10:00 - 12:00",
+        "subject": "Desarrollo de Aplicaciones Móviles",
+        "color": Colors.redAccent,
+      },
+      {
+        "day": "LUNES",
+        "time": "13:00 - 15:00",
+        "subject": "Testing y Calidad de Software",
+        "color": Colors.green,
+      },
+      {
+        "day": "MARTES",
+        "time": "08:00 - 10:00",
+        "subject": "Redes",
+        "color": Colors.orange,
+      },
+      {
+        "day": "MIERCOLES",
+        "time": "10:00 - 12:00",
+        "subject": "Desarrollo de Aplicaciones Móviles",
+        "color": Colors.redAccent,
+      },
+      {
+        "day": "JUEVES",
+        "time": "13:00 - 15:00",
+        "subject": "Testing y Calidad de Software",
+        "color": Colors.green,
+      },
+      {
+        "day": "VIERNES",
+        "time": "08:00 - 10:00",
+        "subject": "Redes",
+        "color": Colors.orange,
+      },
     ];
 
     // Agrupamos los datos por día
@@ -21,9 +52,17 @@ class ScheduleScreen extends StatelessWidget {
       }
       groupedSchedule[item["day"]]!.add(item);
     }
-    
+
     // Lista ordenada de días
-    final List<String> weekDays = ["LUNES", "MARTES", "MIERCOLES", "JUEVES", "VIERNES", "SABADO", "DOMINGO"];
+    final List<String> weekDays = [
+      "LUNES",
+      "MARTES",
+      "MIERCOLES",
+      "JUEVES",
+      "VIERNES",
+      "SABADO",
+      "DOMINGO",
+    ];
 
     return Scaffold(
       backgroundColor: const Color(0xFFF9FAFB),
@@ -48,10 +87,31 @@ class ScheduleScreen extends StatelessWidget {
           return _buildDaySection(context, day, classes);
         }).toList(),
       ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => _navigateToCreationForm(context),
+        backgroundColor: Theme.of(context).primaryColor,
+        foregroundColor: Colors.white,
+        shape: const CircleBorder(),
+        child: const Icon(Icons.settings),
+        tooltip: 'Agregar nueva clase',
+      ),
     );
   }
 
-  Widget _buildDaySection(BuildContext context, String day, List<Map<String, dynamic>> classes) {
+  void _navigateToCreationForm(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const SetupScheduleScreen(),
+      ), // Navega al formulario
+    );
+  }
+
+  Widget _buildDaySection(
+    BuildContext context,
+    String day,
+    List<Map<String, dynamic>> classes,
+  ) {
     // Si no hay clases, mostramos un indicador de día libre
     bool isFreeDay = classes.isEmpty;
 
@@ -93,7 +153,9 @@ class ScheduleScreen extends StatelessWidget {
   }
 
   Widget _buildClassItem(BuildContext context, Map<String, dynamic> classData) {
-    Color color = classData['color'] is Color ? classData['color'] : Colors.blueAccent;
+    Color color = classData['color'] is Color
+        ? classData['color']
+        : Colors.blueAccent;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -127,10 +189,7 @@ class ScheduleScreen extends StatelessWidget {
               ),
               Text(
                 classData['time'].toString().split(' - ')[1],
-                style: const TextStyle(
-                  fontSize: 12,
-                  color: Colors.grey,
-                ),
+                style: const TextStyle(fontSize: 12, color: Colors.grey),
               ),
             ],
           ),
@@ -158,10 +217,7 @@ class ScheduleScreen extends StatelessWidget {
                 const SizedBox(height: 4),
                 Text(
                   "Salón: A101 (Simulado)",
-                  style: TextStyle(
-                    color: color,
-                    fontSize: 12,
-                  ),
+                  style: TextStyle(color: color, fontSize: 12),
                 ),
               ],
             ),

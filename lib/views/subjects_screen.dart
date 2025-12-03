@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:proyecto_dam232/views/add_subject_screen.dart';
+import 'package:proyecto_dam232/views/subject_detail_screen.dart';
 
 class SubjectsScreen extends StatelessWidget {
   const SubjectsScreen({Key? key}) : super(key: key);
@@ -68,8 +70,7 @@ class SubjectsScreen extends StatelessWidget {
             right: 20,
             child: ElevatedButton(
               onPressed: () {
-                // Aquí navegaremos a "Crear Materia" más adelante
-                print("Ir a agregar materia");
+                Navigator.push(context, MaterialPageRoute(builder: (context) => const AddSubjectScreen()));
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF0B1E3B),
@@ -95,8 +96,13 @@ class SubjectsScreen extends StatelessWidget {
   Widget _buildSubjectItem(BuildContext context, Map<String, dynamic> subject) {
     return InkWell(
       onTap: () {
-        // Aquí navegaremos al detalle de la materia
-        print("Ver detalle de ${subject['name']}");
+        // Navegar a la pantalla de edición de materia
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => SubjectDetailScreen(subject: subject)
+          ),
+        );
       },
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 16.0),
