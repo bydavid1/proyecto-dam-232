@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "460639039218",
+    "project_id": "proyecto-dam-235",
+    "storage_bucket": "proyecto-dam-235.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:460639039218:android:25e5874ae4d32de8976a6b",
+        "android_client_info": {
+          "package_name": "com.example.proyecto_dam232"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAhvUkfTyCZPxJ9cz2XZuiMoopUyAFGXPA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
