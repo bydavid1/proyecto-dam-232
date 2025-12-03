@@ -28,26 +28,23 @@ class AcademicDataManager extends ChangeNotifier {
   StreamSubscription<QuerySnapshot>? _gradesSubscription;
 
   AcademicDataManager() {
-    // Cuando el usuario cambia, volvemos a suscribimos a sus datos
     _auth.authStateChanges().listen((User? user) {
       _stopListeners();
-      final uid = user?.uid ?? 'test_user';
-      _startListeners(uid);
+      if (user != null) {
+        print("👤 Sesión iniciada con: ${user.email}");
+        _startListeners(user.uid);
+      } else {
+        print("🚫 Sesión cerrada, listeners detenidos.");
+      }
     });
   }
 
-  // -------------------------------------------------------------
-  // 🔹 Helpers de Firestore
-  // -------------------------------------------------------------
   String get _userId {
-    final uid = _auth.currentUser?.uid ?? 'test_user';
-    assert(() {
-      if (_auth.currentUser == null) {
-        print('⚠️ Usando usuario de prueba: test_user');
-      }
-      return true;
-    }());
-    return uid;
+    final user = _auth.currentUser;
+    if (user == null) {
+      throw Exception("No hay usuario autenticado");
+    }
+    return user.uid;
   }
 
   CollectionReference<Map<String, dynamic>> _collection(String name) {
@@ -256,7 +253,6 @@ class AcademicDataManager extends ChangeNotifier {
     }
     return null;
   }
-
 
   Future<void> addGrade(Grade grade) async {
     try {

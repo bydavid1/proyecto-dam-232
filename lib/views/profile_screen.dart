@@ -1,15 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:proyecto_dam232/views/login_screen.dart';
 import 'package:proyecto_dam232/views/schedule_screen.dart';
 
 class ProfileScreen extends StatelessWidget {
-  const ProfileScreen({Key? key}) : super(key: key);
+  const ProfileScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    // Datos de ejemplo para el perfil
-    const String userName = "Byron David";
-    const String userEmail = "byron.david@example.com";
-    const String userRole = "Estudiante de Ingeniería en Sistemas";
+    final user = FirebaseAuth.instance.currentUser;
+
+    final String userName = user?.displayName ?? "Usuario sin nombre";
+    final String userEmail = user?.email ?? "No disponible";
+    const String userRole = "Estudiante de Ingeniería en Sistemas"; 
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -39,10 +42,15 @@ class ProfileScreen extends StatelessWidget {
                 shape: BoxShape.circle,
                 border: Border.all(color: const Color(0xFF0B1E3B), width: 3),
               ),
-              child: const CircleAvatar(
+              child: CircleAvatar(
                 radius: 50,
-                backgroundColor: Colors.blueGrey,
-                child: Icon(Icons.person, color: Colors.white, size: 60),
+                backgroundColor: Colors.blueGrey.shade200,
+                backgroundImage: user?.photoURL != null
+                    ? NetworkImage(user!.photoURL!)
+                    : null,
+                child: user?.photoURL == null
+                    ? const Icon(Icons.person, color: Colors.white, size: 60)
+                    : null,
               ),
             ),
             
@@ -86,7 +94,10 @@ class ProfileScreen extends StatelessWidget {
               subtitle: "Ver calendario de clases",
               color: Colors.green,
               onTap: () {
-                Navigator.push(context, MaterialPageRoute(builder: (context) => const ScheduleScreen()));
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const ScheduleScreen()),
+                );
               },
             ),
 
@@ -102,11 +113,18 @@ class ProfileScreen extends StatelessWidget {
 
             const SizedBox(height: 40),
 
-            // 5. Botón de Cerrar Sesión (Destacado)
             TextButton.icon(
-              onPressed: () {
-                // Lógica de cerrar sesión
-                print("Cerrar Sesión");
+              onPressed: () async {
+                await FirebaseAuth.instance.signOut();
+
+                // Volver al login
+                if (context.mounted) {
+                  Navigator.pushAndRemoveUntil(
+                    context,
+                    MaterialPageRoute(builder: (_) => const LoginScreen()),
+                    (route) => false,
+                  );
+                }
               },
               icon: const Icon(Icons.logout, color: Colors.red),
               label: const Text(
