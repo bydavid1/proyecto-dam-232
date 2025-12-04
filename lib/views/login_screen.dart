@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:proyecto_dam232/views/register_screen.dart';
 import 'home_screen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -155,7 +156,12 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
               const SizedBox(height: 30),
               TextButton(
-                onPressed: () {},
+                onPressed: () {
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(builder: (_) => const RegisterScreen()),
+                  );
+                },
                 child: const Text(
                   "¿No tienes cuenta? Regístrate",
                   style: TextStyle(color: Colors.grey),

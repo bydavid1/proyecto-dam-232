@@ -1,18 +1,61 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:proyecto_dam232/views/login_screen.dart';
 import 'package:proyecto_dam232/views/schedule_screen.dart';
 
-class ProfileScreen extends StatelessWidget {
+class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
+
+  @override
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen> {
+  String? _userName;
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserData();
+  }
+
+  Future<void> _loadUserData() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    try {
+      final doc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .get();
+
+      if (doc.exists && doc.data()?['name'] != null) {
+        setState(() {
+          _userName = doc['name'];
+          _isLoading = false;
+        });
+      } else {
+        setState(() {
+          _userName = "Usuario sin nombre";
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      print("Error al cargar datos del usuario: $e");
+      setState(() {
+        _userName = "Error al cargar nombre";
+        _isLoading = false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final user = FirebaseAuth.instance.currentUser;
-
-    final String userName = user?.displayName ?? "Usuario sin nombre";
     final String userEmail = user?.email ?? "No disponible";
-    const String userRole = "Estudiante de Ingeniería en Sistemas"; 
+    const String userRole = "Estudiante de Ingeniería en Sistemas";
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -30,115 +73,112 @@ class ProfileScreen extends StatelessWidget {
           ),
         ),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            // 1. Avatar del Usuario
-            Container(
-              padding: const EdgeInsets.all(4),
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(color: const Color(0xFF0B1E3B), width: 3),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : SingleChildScrollView(
+              padding: const EdgeInsets.all(24.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  // Avatar
+                  Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: const Color(0xFF0B1E3B),
+                        width: 3,
+                      ),
+                    ),
+                    child: CircleAvatar(
+                      radius: 50,
+                      backgroundColor: Colors.blueGrey.shade200,
+                      backgroundImage: user?.photoURL != null
+                          ? NetworkImage(user!.photoURL!)
+                          : null,
+                      child: user?.photoURL == null
+                          ? const Icon(Icons.person,
+                              color: Colors.white, size: 60)
+                          : null,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Nombre
+                  Text(
+                    _userName ?? "Usuario sin nombre",
+                    style: const TextStyle(
+                      color: Color(0xFF0B1E3B),
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+
+                  // Rol
+                  Text(
+                    userRole,
+                    style: const TextStyle(color: Colors.grey, fontSize: 14),
+                  ),
+
+                  const SizedBox(height: 40),
+
+                  // Info
+                  _buildProfileCard(
+                    icon: Icons.email_outlined,
+                    title: "Correo Electrónico",
+                    subtitle: userEmail,
+                    color: Colors.redAccent,
+                    onTap: () {},
+                  ),
+                  _buildProfileCard(
+                    icon: Icons.calendar_today_outlined,
+                    title: "Horario Académico",
+                    subtitle: "Ver calendario de clases",
+                    color: Colors.green,
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => const ScheduleScreen()),
+                      );
+                    },
+                  ),
+                  _buildProfileCard(
+                    icon: Icons.settings_outlined,
+                    title: "Configuración",
+                    subtitle: "Ajustes de la aplicación",
+                    color: Colors.orange,
+                    onTap: () {},
+                  ),
+                  const SizedBox(height: 40),
+
+                  // Cerrar sesión
+                  TextButton.icon(
+                    onPressed: () async {
+                      await FirebaseAuth.instance.signOut();
+                      if (context.mounted) {
+                        Navigator.pushAndRemoveUntil(
+                          context,
+                          MaterialPageRoute(
+                              builder: (_) => const LoginScreen()),
+                          (route) => false,
+                        );
+                      }
+                    },
+                    icon: const Icon(Icons.logout, color: Colors.red),
+                    label: const Text(
+                      "Cerrar Sesión",
+                      style: TextStyle(
+                        color: Colors.red,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                    ),
+                  ),
+                ],
               ),
-              child: CircleAvatar(
-                radius: 50,
-                backgroundColor: Colors.blueGrey.shade200,
-                backgroundImage: user?.photoURL != null
-                    ? NetworkImage(user!.photoURL!)
-                    : null,
-                child: user?.photoURL == null
-                    ? const Icon(Icons.person, color: Colors.white, size: 60)
-                    : null,
-              ),
             ),
-            
-            const SizedBox(height: 16),
-            
-            // 2. Nombre
-            Text(
-              userName,
-              style: const TextStyle(
-                color: Color(0xFF0B1E3B),
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            
-            const SizedBox(height: 4),
-
-            // 3. Rol
-            Text(
-              userRole,
-              style: const TextStyle(
-                color: Colors.grey,
-                fontSize: 14,
-              ),
-            ),
-
-            const SizedBox(height: 40),
-
-            // 4. Secciones de Información
-            _buildProfileCard(
-              icon: Icons.email_outlined,
-              title: "Correo Electrónico",
-              subtitle: userEmail,
-              color: Colors.redAccent,
-              onTap: () {},
-            ),
-            
-            _buildProfileCard(
-              icon: Icons.calendar_today_outlined,
-              title: "Horario Académico",
-              subtitle: "Ver calendario de clases",
-              color: Colors.green,
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const ScheduleScreen()),
-                );
-              },
-            ),
-
-            _buildProfileCard(
-              icon: Icons.settings_outlined,
-              title: "Configuración",
-              subtitle: "Ajustes de la aplicación",
-              color: Colors.orange,
-              onTap: () {
-                // Navegar a la vista de configuración
-              },
-            ),
-
-            const SizedBox(height: 40),
-
-            TextButton.icon(
-              onPressed: () async {
-                await FirebaseAuth.instance.signOut();
-
-                // Volver al login
-                if (context.mounted) {
-                  Navigator.pushAndRemoveUntil(
-                    context,
-                    MaterialPageRoute(builder: (_) => const LoginScreen()),
-                    (route) => false,
-                  );
-                }
-              },
-              icon: const Icon(Icons.logout, color: Colors.red),
-              label: const Text(
-                "Cerrar Sesión",
-                style: TextStyle(
-                  color: Colors.red,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 
@@ -167,7 +207,6 @@ class ProfileScreen extends StatelessWidget {
         ),
         child: Row(
           children: [
-            // Ícono
             Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
@@ -176,10 +215,7 @@ class ProfileScreen extends StatelessWidget {
               ),
               child: Icon(icon, color: color, size: 24),
             ),
-            
             const SizedBox(width: 16),
-            
-            // Textos
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -195,15 +231,12 @@ class ProfileScreen extends StatelessWidget {
                   const SizedBox(height: 2),
                   Text(
                     subtitle,
-                    style: const TextStyle(
-                      color: Colors.grey,
-                      fontSize: 12,
-                    ),
+                    style:
+                        const TextStyle(color: Colors.grey, fontSize: 12),
                   ),
                 ],
               ),
             ),
-            
             const Icon(Icons.chevron_right, color: Colors.grey),
           ],
         ),

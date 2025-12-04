@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:proyecto_dam232/providers/academic_data_manager.dart';
-import 'package:proyecto_dam232/utils/color.dart'; 
+import 'package:proyecto_dam232/utils/color.dart';
 import 'package:proyecto_dam232/views/schedule_screen.dart';
 import 'package:proyecto_dam232/views/add_task_event_screen.dart';
 import 'package:proyecto_dam232/views/profile_screen.dart';
@@ -91,7 +93,10 @@ class HomeDashboardView extends StatelessWidget {
     return Expanded(
       child: GestureDetector(
         onTap: () {
-          Navigator.push(context, MaterialPageRoute(builder: (context) => targetScreen));
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => targetScreen),
+          );
         },
         child: Container(
           margin: const EdgeInsets.symmetric(horizontal: 6),
@@ -230,14 +235,14 @@ class HomeDashboardView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final primaryColor = Theme.of(context).primaryColor;
-
-    // ✅ Reemplazar Consumer por context.watch para simplificar
     final dataManager = context.watch<AcademicDataManager>();
     final todayEvents = dataManager.todayActivities;
 
     return Column(
       children: [
-        // Encabezado
+        // ------------------------------------------------------------------
+        // ENCABEZADO CON NOMBRE DEL USUARIO
+        // ------------------------------------------------------------------
         Container(
           padding: const EdgeInsets.only(top: 60, left: 24, right: 24, bottom: 30),
           decoration: BoxDecoration(
@@ -247,16 +252,41 @@ class HomeDashboardView extends StatelessWidget {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text("Bienvenido, Usuario", style: TextStyle(color: Colors.white70, fontSize: 14)),
-                  SizedBox(height: 4),
-                  Text(
-                    "test_user",
-                    style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold),
-                  ),
-                ],
+              // 👇 AQUÍ SE MUESTRA EL NOMBRE DINÁMICAMENTE
+              FutureBuilder<DocumentSnapshot>(
+                future: FirebaseFirestore.instance
+                    .collection('users')
+                    .doc(FirebaseAuth.instance.currentUser?.uid)
+                    .get(),
+                builder: (context, snapshot) {
+                  String name = "Usuario";
+
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    name = "Cargando...";
+                  } else if (snapshot.hasData && snapshot.data!.exists) {
+                    final data = snapshot.data!.data() as Map<String, dynamic>;
+                    name = data['name'] ?? "Usuario";
+                  }
+
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        "Bienvenido,",
+                        style: TextStyle(color: Colors.white70, fontSize: 14),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        name,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  );
+                },
               ),
               Container(
                 padding: const EdgeInsets.all(2),
@@ -274,7 +304,9 @@ class HomeDashboardView extends StatelessWidget {
           ),
         ),
 
-        // Contenido principal
+        // ------------------------------------------------------------------
+        // CONTENIDO PRINCIPAL
+        // ------------------------------------------------------------------
         Expanded(
           child: ListView(
             padding: const EdgeInsets.all(24),
@@ -337,7 +369,10 @@ class HomeDashboardView extends StatelessWidget {
               Center(
                 child: GestureDetector(
                   onTap: () {
-                    Navigator.push(context, MaterialPageRoute(builder: (_) => const AddTaskEventScreen()));
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const AddTaskEventScreen()),
+                    );
                   },
                   child: Container(
                     padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 24),

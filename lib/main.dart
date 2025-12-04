@@ -17,7 +17,9 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return ChangeNotifierProvider(
+      create: (_) => AcademicDataManager(),
+      child: MaterialApp(
       title: 'Planificador Escolar',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
@@ -76,14 +78,12 @@ class MyApp extends StatelessWidget {
           }
 
           if (snapshot.hasData) {
-            return ChangeNotifierProvider(
-              create: (_) => AcademicDataManager(),
-              child: const HomeScreen(),
-            );
+            return const HomeScreen();
           }
 
           return const LoginScreen();
         },
+      ),
       ),
     );
   }
