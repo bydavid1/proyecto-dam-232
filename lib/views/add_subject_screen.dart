@@ -4,7 +4,7 @@ import 'package:proyecto_dam232/providers/academic_data_manager.dart';
 import '../models/academic_models.dart';
 
 class AddSubjectScreen extends StatefulWidget {
-  final Subject? subjectToEdit; // Ahora usamos el modelo real
+  final Subject? subjectToEdit;
 
   const AddSubjectScreen({super.key, this.subjectToEdit});
 

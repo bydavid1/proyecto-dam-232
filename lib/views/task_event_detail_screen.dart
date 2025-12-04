@@ -13,13 +13,10 @@ class TaskEventDetailScreen extends StatelessWidget {
     required this.subject,
   });
 
-  // Simulación de una función para manejar el estado
   void _toggleCompletion(BuildContext context) {
-    // Lógica futura para actualizar Firestore
     final newState = !event.isCompleted;
     print("Toggle Completion para Evento ID ${event.id}: Nuevo estado $newState");
     
-    // Simular el cierre o actualización de la pantalla
     Navigator.pop(context);
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(newState ? "Evento marcado como completado." : "Evento marcado como pendiente.")),
@@ -186,7 +183,6 @@ class TaskEventDetailScreen extends StatelessWidget {
     );
   }
 
-  // Widget auxiliar para filas de detalle
   Widget _buildDetailRow({required String label, required String value, required IconData icon, Color? valueColor}) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 15.0),

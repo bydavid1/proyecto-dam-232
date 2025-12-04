@@ -4,7 +4,7 @@ import 'package:proyecto_dam232/providers/academic_data_manager.dart';
 import '../models/academic_models.dart';
 
 class AddTaskEventScreen extends StatefulWidget {
-  final Event? eventToEdit; // Ahora usamos el modelo en lugar de Map
+  final Event? eventToEdit; 
 
   const AddTaskEventScreen({super.key, this.eventToEdit});
 

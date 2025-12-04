@@ -9,19 +9,16 @@ class AcademicDataManager extends ChangeNotifier {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
-  // Listas locales (cache)
   List<Subject> _subjects = [];
   List<Event> _events = [];
   List<ScheduleItem> _scheduleItems = [];
   List<Grade> _grades = [];
 
-  // Getters públicos
   List<Subject> get subjects => _subjects;
   List<Event> get events => _events;
   List<ScheduleItem> get schedule => _scheduleItems;
   List<Grade> get grades => _grades;
 
-  // Streams para escuchar cambios en tiempo real
   StreamSubscription<QuerySnapshot>? _subjectsSub;
   StreamSubscription<QuerySnapshot>? _eventsSub;
   StreamSubscription<QuerySnapshot>? _scheduleSub;
@@ -51,9 +48,7 @@ class AcademicDataManager extends ChangeNotifier {
     return _firestore.collection('users').doc(_userId).collection(name);
   }
 
-  // -------------------------------------------------------------
-  // 🔹 Listeners en tiempo real
-  // -------------------------------------------------------------
+  // listeners
   void _startListeners(String uid) {
     // Materias
     _subjectsSub = _collection('subjects').snapshots().listen((snapshot) {
@@ -112,9 +107,7 @@ class AcademicDataManager extends ChangeNotifier {
     super.dispose();
   }
 
-  // -------------------------------------------------------------
-  // 🔹 CRUD: SUBJECTS (Materias)
-  // -------------------------------------------------------------
+  /// cruds
   Future<void> addSubject(Subject subject) async {
     try {
       await _collection('subjects').add(subject.toFirestore());
@@ -212,9 +205,7 @@ class AcademicDataManager extends ChangeNotifier {
     return null;
   }
 
-  // -------------------------------------------------------------
-  // 🔹 CRUD: SCHEDULE (Horarios)
-  // -------------------------------------------------------------
+  // crud schedule
   Future<void> addSchedule(Schedule schedule) async {
     try {
       await _collection('schedule').add(schedule.toFirestore());
@@ -285,9 +276,7 @@ class AcademicDataManager extends ChangeNotifier {
     return _grades.where((g) => g.subjectId == subjectId).toList();
   }
 
-  // -------------------------------------------------------------
-  // 🔹 Utilidades
-  // -------------------------------------------------------------
+  // utulities
   List<Event> get todayActivities {
     final now = DateTime.now();
     return _events.where((e) {
@@ -297,7 +286,7 @@ class AcademicDataManager extends ChangeNotifier {
     }).toList();
   }
 
-  // Agrega una clase desde la UI (SetupScheduleScreen)
+
   Future<void> addScheduleItem(ScheduleItem item) async {
     final subject = _subjects.firstWhereOrNull(
       (s) => s.name.toLowerCase() == item.subjectName.toLowerCase(),
@@ -316,9 +305,7 @@ class AcademicDataManager extends ChangeNotifier {
   }
 }
 
-// -------------------------------------------------------------
-// 🔹 Extension auxiliar
-// -------------------------------------------------------------
+// extension para firstWhereOrNull
 extension IterableExtension<T> on Iterable<T> {
   T? firstWhereOrNull(bool Function(T element) test) {
     for (final e in this) {

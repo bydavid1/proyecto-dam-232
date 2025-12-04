@@ -84,9 +84,9 @@ class Event {
 class Schedule {
   final String id;
   final String subjectId;
-  final String dayOfWeek; // 'Lunes', 'Martes', etc.
-  final String startTime; // e.g., '10:00'
-  final String endTime;   // e.g., '12:00'
+  final String dayOfWeek; 
+  final String startTime; 
+  final String endTime;  
   final String classroom;
 
   Schedule({
@@ -143,10 +143,10 @@ class ScheduleItem {
 
 class Grade {
   final String id;
-  final String subjectId; // Relación con la materia
+  final String subjectId; 
   final String name;
   final double percentage;
-  final double? score; // Puede ser null si aún no se ha calificado
+  final double? score; 
   final double maxScore;
   final DateTime createdAt;
 

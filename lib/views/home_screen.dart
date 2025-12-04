@@ -76,9 +76,6 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
-// ------------------------------------------------------------------
-// DASHBOARD VIEW
-// ------------------------------------------------------------------
 
 class HomeDashboardView extends StatelessWidget {
   const HomeDashboardView({super.key});
@@ -304,9 +301,6 @@ class HomeDashboardView extends StatelessWidget {
           ),
         ),
 
-        // ------------------------------------------------------------------
-        // CONTENIDO PRINCIPAL
-        // ------------------------------------------------------------------
         Expanded(
           child: ListView(
             padding: const EdgeInsets.all(24),

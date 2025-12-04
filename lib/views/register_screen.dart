@@ -47,8 +47,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
       });
 
       if (!mounted) return;
-
-      // 🔹 Redirigir al Home
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (_) => const HomeScreen()),
